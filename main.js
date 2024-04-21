@@ -62,12 +62,12 @@ LocalStorageInstall(TaskPort);
 //// URl 제어
 var app = Elm.Main.init({
     node: document.getElementById('myapp'),
-    flags: location.href
+    flags: ("http://test.com/" + location.search)
 });
 
 window.addEventListener('popstate', function () {
     try {
-        app.ports.onUrlChange.send(location.href);
+        app.ports.onUrlChange.send(("http://test.com/" + location.search));
     } catch {}
 });
 
