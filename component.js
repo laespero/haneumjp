@@ -294,32 +294,33 @@ customElements.define('float-div',
 customElements.define('card-drag-area',
     class extends HTMLElement {
         connectedCallback() {
-            this.addEventListener("touchstart", (evt => {
+            this.style.touchAction = "none";
+
+            this.addEventListener("pointerdown", (evt => {
                 try {
                     var tar = evt.currentTarget;
-                    var touch = evt.targetTouches[0];
-                    tar.startX = touch.screenX;
-                    tar.startY = touch.screenY;
+                    tar.startX = evt.screenX;
+                    tar.startY = evt.screenY;
                     tar.isDispatched = false;
                 } catch (err) {
                     console.log(err);
                 }
             }), false);
 
-            this.addEventListener("touchmove", (evt => {
+            this.addEventListener("pointermove", (evt => {
                 try {
+                    if(evt.pointerType == "mouse" && evt.pressure == 0) return;
                     var tar = evt.currentTarget;
                     if (tar.isDispatched) return;
 
-                    var touch = evt.targetTouches[0];
                     tar.dispatchEvent(new CustomEvent('card-drag',
-                        { detail: (touch.screenX - tar.startX) + (touch.screenY - tar.startY) }));
+                        { detail: (evt.screenX - tar.startX) + (evt.screenY - tar.startY) }));
                 } catch (err) {
                     console.log(err);
                 }
             }), false);
 
-            this.addEventListener("touchend", (evt => {
+            this.addEventListener("pointerup", (evt => {
                 try {
                     var tar = evt.currentTarget;
                     tar.dispatchEvent(new CustomEvent('card-drag-end'));
@@ -349,12 +350,15 @@ customElements.define('voca-seekbar',
         }
 
         connectedCallback() {
+            this.style.touchAction = "none";
+
             this.setStyle();
-            this.addEventListener("touchmove", (evt => {
+            this.addEventListener("pointermove", (evt => {
+                if(evt.pointerType == "mouse" && evt.pressure == 0) return;
+
                 var tar = evt.currentTarget;
-                var touch = evt.targetTouches[0];
                 var rect = tar.getBoundingClientRect();
-                tar.point = (touch.clientX - rect.x) / (rect.width);
+                tar.point = (evt.clientX - rect.x) / (rect.width);
                 //console.log(tar);
                 tar.dispatchEvent(new CustomEvent('seekbarMove'));
             }), false);
@@ -384,12 +388,13 @@ customElements.define('voca-seekbar',
 customElements.define('gesture-div',
     class extends HTMLElement {
         connectedCallback() {
-            this.addEventListener("touchstart", (evt => {
+            this.style.touchAction = "none";
+
+            this.addEventListener("pointerdown", (evt => {
                 try {
                     var tar = evt.currentTarget;
-                    var touch = evt.targetTouches[0];
-                    tar.startX = touch.screenX;
-                    tar.startY = touch.screenY;
+                    tar.startX = evt.screenX;
+                    tar.startY = evt.screenY;
                     tar.isDispatched = false;
                 } catch (err) {
                     console.log(err);
@@ -397,14 +402,15 @@ customElements.define('gesture-div',
 
             }), false);
 
-            this.addEventListener("touchmove", (evt => {
+            this.addEventListener("pointermove", (evt => {
                 try {
+                    if(evt.pointerType == "mouse" && evt.pressure == 0) return;
+
                     var tar = evt.currentTarget;
                     if (tar.isDispatched) return;
 
-                    var touch = evt.targetTouches[0];
-                    var xDelta = touch.screenX - tar.startX;
-                    var yDelta = touch.screenY - tar.startY;
+                    var xDelta = evt.screenX - tar.startX;
+                    var yDelta = evt.screenY - tar.startY;
 
                     if (-40 < yDelta && yDelta < 40) {
                         if (xDelta < -50) {
@@ -527,6 +533,7 @@ customElements.define('write-canvas',
         init()
         {
             const canvas = document.createElement("canvas");
+            this.style.touchAction = "none";
             this.appendChild(canvas);
             const ctx = canvas.getContext('2d');
             this.ctx = ctx;
@@ -542,13 +549,14 @@ customElements.define('write-canvas',
 
             function toPos(e) {
                 const offset = e.target.getBoundingClientRect();
-                const x = e.touches[0].clientX - offset.x;
-                const y = e.touches[0].clientY - offset.y;
+                const x = e.clientX - offset.x;
+                const y = e.clientY - offset.y;
                 return {x:x, y:y};
             }
 
-            canvas.addEventListener('touchstart', e => { try {
+            canvas.addEventListener('pointerdown', e => { try {
                 e.preventDefault();
+
                 const pos = toPos(e);
                 coord.cx = pos.x;
                 coord.cy = pos.y;
@@ -560,16 +568,19 @@ customElements.define('write-canvas',
             } catch {}
             });
 
-            canvas.addEventListener('touchend', e => { try {
+            canvas.addEventListener('pointermove', e => { try {
                 e.preventDefault();
+                if(e.pointerType == "mouse" && e.pressure == 0) return;
+
                 update(e);
                 draw();
                 isDraw = false;
             } catch {}
             });
 
-            canvas.addEventListener('touchmove', e => { try {
+            canvas.addEventListener('pointerup', e => { try {
                 e.preventDefault();
+
                 update(e);
                 draw();
             } catch {}
