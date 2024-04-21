@@ -73,7 +73,8 @@ window.addEventListener('popstate', function () {
 
 app.ports.pushUrl.subscribe(function(url) {
     try {
-        history.pushState({}, '', url);
+        baseUrl = [location.protocol, '//', location.host, location.pathname].join('');
+        history.pushState({}, '', (baseUrl+url));
     } catch {}
 });
 //// URl 제어
