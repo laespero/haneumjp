@@ -121,12 +121,23 @@ customElements.define('float-div',
             this._isDestroyState = false;
             this._isShortDestroy = false;
             this.dur = 200;
+
         }
 
         tick(now) {
             if(this.isAlive) requestAnimationFrame((t) => { this.tick(t); });
 
             if(!this._targetId) return;
+
+            if(!this.p_targetId) {
+                  if(this.startTime) {
+                     const p = (now-this.startTime)/100;
+                     if(p>1) this.style.opacity = 1;
+                     else this.style.opacity = p;
+                  }
+            }else{
+                this.style.opacity = 1;
+            }
 
             if(!this.x_isDestroyState && this._isDestroyState){
                 this.destroyStartTime = now;
@@ -151,10 +162,9 @@ customElements.define('float-div',
                 }
             }
 
-
             if(!this.x_targetId) {
                 let cs = this.currentStyleVal();
-                cs.left = -300;
+                cs.left -= 100;
 
                 this.styleValA = Object.assign({},cs);
                 this.styleValT = Object.assign({},cs);
@@ -165,10 +175,11 @@ customElements.define('float-div',
                 this.styleValA = this.styleValT;
                 this.startTime = now;
             }
-            else if(this.x_orderIdx != this._orderIdx) {
+            else if(this.x_orderIdx != this._orderIdx) { // 순서 변경
                 this.styleValA = this.styleValT;
                 this.startTime = now;
             }
+
 
             this.styleValB = this.currentStyleVal();
 
@@ -183,6 +194,7 @@ customElements.define('float-div',
         }
 
         connectedCallback() {
+            this.style.opacity = 0;
             requestAnimationFrame((t) => { this.tick(t); });
             this.isAlive = true;
         }
@@ -217,14 +229,18 @@ customElements.define('float-div',
 
         currentStyleVal() {
             const o = {left:0, top:0, width:0, height:0, fontSize:0, borderRadius:0};
+
+            const oEle = document.getElementById("float-origin");
             const ele = document.getElementById(this._targetId);
 
-            if(ele){
+            if(oEle && ele){
+                const oRect = oEle.getBoundingClientRect();
                 const rect = ele.getBoundingClientRect();
+
                 const compStyles = window.getComputedStyle(ele);
 
-                o.left = rect.left;
-                o.top = rect.top;
+                o.left = rect.left - oRect.left;
+                o.top = rect.top - oRect.top;
                 o.width = rect.width;
                 o.height = rect.height;
                 o.fontSize = parseFloat(compStyles.getPropertyValue("font-size"));
@@ -235,7 +251,7 @@ customElements.define('float-div',
         }
 
         updateStyle(now, o) {
-            this.style.position = "fixed";
+            this.style.position = "absolute";
             this.style.left = o.left + 'px';
             this.style.top = o.top + 'px';
             this.style.width = o.width + 'px';
@@ -285,6 +301,7 @@ customElements.define('float-div',
         }
 
         set targetId(val) {
+            this.p_targetId = this._targetId;
             this._targetId = val;
         }
 
@@ -302,6 +319,8 @@ customElements.define('card-drag-area',
                     tar.startX = evt.screenX;
                     tar.startY = evt.screenY;
                     tar.isDispatched = false;
+
+                    this.startId = evt.target.id;
                 } catch (err) {
                     console.log(err);
                 }
@@ -309,12 +328,14 @@ customElements.define('card-drag-area',
 
             this.addEventListener("pointermove", (evt => {
                 try {
-                    if(evt.pointerType == "mouse" && evt.pressure == 0) return;
+                    if(evt.pointerType == "mouse" && evt.buttons == 0) return;
                     var tar = evt.currentTarget;
                     if (tar.isDispatched) return;
 
-                    tar.dispatchEvent(new CustomEvent('card-drag',
-                        { detail: (evt.screenX - tar.startX) + (evt.screenY - tar.startY) }));
+                    if(!evt.target.id.includes("char")) {
+                        tar.dispatchEvent(new CustomEvent('card-drag',
+                            { detail: (evt.screenX - tar.startX) + (evt.screenY - tar.startY) }));
+                    }
                 } catch (err) {
                     console.log(err);
                 }
@@ -323,7 +344,13 @@ customElements.define('card-drag-area',
             this.addEventListener("pointerup", (evt => {
                 try {
                     var tar = evt.currentTarget;
-                    tar.dispatchEvent(new CustomEvent('card-drag-end'));
+                    if(this.startId && this.startId.includes("char") && this.startId === evt.target.id) {
+                        tar.dispatchEvent(new CustomEvent('card-drag-end', { detail:  evt.target.id}));
+                    }
+                    else {
+                        tar.dispatchEvent(new CustomEvent('card-drag-end', { detail:  "NOPE"}));
+                    }
+
                 } catch (err) {
                     console.log(err);
                 }
@@ -354,7 +381,7 @@ customElements.define('voca-seekbar',
 
             this.setStyle();
             this.addEventListener("pointermove", (evt => {
-                if(evt.pointerType == "mouse" && evt.pressure == 0) return;
+                if(evt.pointerType == "mouse" && evt.buttons == 0) return;
 
                 var tar = evt.currentTarget;
                 var rect = tar.getBoundingClientRect();
@@ -404,7 +431,7 @@ customElements.define('gesture-div',
 
             this.addEventListener("pointermove", (evt => {
                 try {
-                    if(evt.pointerType == "mouse" && evt.pressure == 0) return;
+                    if(evt.pointerType == "mouse" && evt.buttons == 0) return;
 
                     var tar = evt.currentTarget;
                     if (tar.isDispatched) return;
@@ -545,7 +572,7 @@ customElements.define('write-canvas',
             ctx.canvas.height = 200;
 
             let isDraw = false;
-            let coord = { px: 0, py: 0, cx: 0, cy: 0 };
+            let coord = { px: -1, py: -1, cx: -1, cy: -1 };
 
             function toPos(e) {
                 const offset = e.target.getBoundingClientRect();
@@ -570,7 +597,7 @@ customElements.define('write-canvas',
 
             canvas.addEventListener('pointermove', e => { try {
                 e.preventDefault();
-                if(e.pointerType == "mouse" && e.pressure == 0) return;
+                if(e.pointerType == "mouse" && e.buttons == 0) return;
 
                 update(e);
                 draw();
@@ -587,6 +614,14 @@ customElements.define('write-canvas',
             });
 
             function update(e) {
+                if(coord.cx == -1) {
+                    const pos = toPos(e);
+                    coord.px = pos.x;
+                    coord.py = pos.y;
+                    coord.cx = pos.x;
+                    coord.cy = pos.y;
+                }
+
                 coord.px = coord.cx;
                 coord.py = coord.cy;
 

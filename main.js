@@ -79,7 +79,7 @@ app.ports.pushUrl.subscribe(function(url) {
 });
 //// URl 제어
 
-var dataVersion = 6;
+var dataVersion = 7;
 if (localStorage.getItem("data-version") != dataVersion) {
     localStorage.clear();
     localStorage.setItem("data-version", dataVersion);
@@ -142,6 +142,15 @@ app.ports.newTab.subscribe( url => location.href = url);
 
 app.ports.sendToPlayer.subscribe(function (o) {
     try {
+        if(o.tag == "scrollReset") {
+            try {
+            const scrollElement = document.getElementById(o.data);
+            scrollElement.style.overflow = 'hidden';
+            scrollElement.scrollTop = 0;
+            scrollElement.scrollLeft = 0;
+            scrollElement.style.overflow = 'auto';
+            } catch {}
+        }
         if (o.tag == "start") {
             app.ports.fromPlayer.send({ tag: "start", data: data });
         }
